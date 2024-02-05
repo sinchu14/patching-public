@@ -1,0 +1,37 @@
+---
+- name: Patch Linux Servers
+  hosts: dev
+  become: yes
+  become_method: sudo
+
+  tasks:
+    - name: Update package cache
+      package:
+        name: '*'
+        state: latest
+      register: update_cache
+      async: 300
+      poll: 0
+
+    - name: Perform system update
+      command: "dnf update -y"
+      when: update_cache.changed
+
+    - name: Wait for package update to complete
+      async_status:
+        jid: "{{ update_cache.ansible_job_id }}"
+      register: job_result
+      until: job_result.finished
+      retries: 300
+      delay: 10
+
+    - name: Reboot if required
+      command: "reboot"
+      async: 1
+      poll: 0
+      when: update_cache.changed
+
+    - name: Wait for system to reboot
+      wait_for_connection:
+        delay: 30
+        timeout: 300
