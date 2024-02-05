@@ -1,6 +1,6 @@
 ---
 - name: Patch Linux Servers
-  hosts: test_inv
+  hosts: all
   become: yes
   become_method: sudo
 
